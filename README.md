@@ -17,10 +17,12 @@
        
        `-l 显示进程名字   -mlv显示进程详细信息`
 - **jstat** 查看jvm内部gc相关信息
+
        `-gc 显示堆内存的使用情况，kb单位；-gcutil 显示堆内存使用率，百分比`
        `示例：jstat -gc pid 1000 1000 （1000  1000 表示打印1000次，每1秒打印一次）`
        `jstat -gcutil pid 1000 1000`
 - **jmap**  查看heap或类占用空间统计
+
       `-heap 打印堆内存的配置和使用信息`
       `-histo 打印哪些类占用的空间多，直方图`
       `-dump:format=b,file=xxx.hprof导出到文件`
