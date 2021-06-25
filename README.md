@@ -19,3 +19,8 @@
 - **jstack**  查看线程信息
 - **jcmd**  执行jvm相关分析命令（整合命令）
 - **jrunscript/jjs**  执行js命令
+
+
+
+## Windows控制台窗口拉宽方法
+输入命令wmic，然后输入exit。即可
