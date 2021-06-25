@@ -27,7 +27,18 @@
       `-histo 打印哪些类占用的空间多，直方图`
       `-dump:format=b,file=xxx.hprof导出到文件`
 - **jstack**  查看线程信息
+
+      `jstack -l pid`
 - **jcmd**  执行jvm相关分析命令（整合命令）
+
+      `jcmd pid help`
+      'jcmd pid VM.version
+       jcmd pid VM.flags
+       jcmd pid VM.command_line
+       jcmd pid VM.system_properties
+       jcmd pid Thread.print
+       jcmd pid GC.class_histogram
+       jcmd pid GC.heap_info'
 - **jrunscript/jjs**  执行js命令
 
 
