@@ -45,3 +45,7 @@
 
 ## Windows控制台窗口拉宽方法
 输入命令wmic，然后输入exit。即可
+
+## gc日志输出到文件
+-Xloggc:xxx.log
+
