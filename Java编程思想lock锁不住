@@ -1,0 +1,174 @@
+    package com.cta.sduty.concurrent.criticalSection;
+
+
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
+class Pair{//not thread-safe
+    //x,y;x自增，y自增
+    private int x,y;
+    public Pair(int x,int y){
+        this.x = x;
+        this.y = y;
+    }
+    public Pair(){this.x = 0 ;this.y = 0;}
+    public int getX(){return this.x;}
+    public int getY(){return this.y;}
+    public void incrementX(){x++;}//非线程安全
+    public void incrementY(){y++;}//非线程安全
+    public String toString(){
+        return "x: "+x +" y: "+y;
+    }
+    public class PairValuesNotEqualException extends RuntimeException{
+        public PairValuesNotEqualException(){
+            super("Pair value not equal:"+Pair.this);
+        }
+    }
+    public void checkState(){
+        if (x != y) {
+            throw new PairValuesNotEqualException();
+        }
+    }
+}
+
+/**
+ * protect a Pair inside a thread-safe class;
+ */
+abstract class PairManager{
+    //counter,pair,storage,getPair,store,increment
+    AtomicInteger checkCounter = new AtomicInteger(0);
+    protected Pair p = new Pair();
+    private List<Pair> storage = Collections.synchronizedList(new ArrayList<Pair>());
+    public synchronized Pair getPair(){
+        return new Pair(p.getX(),p.getY());
+    }
+    protected void store(Pair p){
+        storage.add(p);
+        try {
+            TimeUnit.MILLISECONDS.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    //将具体的自增实现留给各个实现类
+    public abstract void increment();
+}
+//synchronized the entire method
+class PairManager1 extends PairManager{
+    @Override
+    public synchronized void increment() {
+        p.incrementX();
+        p.incrementY();
+        store(getPair());//增加耗时操作
+    }
+}
+//Use a critical section，使用临界区的方案，就是同步代码块
+class PairManager2 extends PairManager{
+
+    @Override
+    public void increment() {
+//        Pair temp ;
+//        synchronized (this){
+//            p.incrementX();
+//            p.incrementY();
+//            temp = getPair();
+//        }
+//        store(temp);
+        Lock lock = new ReentrantLock();
+        Pair temp ;
+        lock.lock();
+        try {
+            p.incrementX();
+            p.incrementY();
+            temp = getPair();
+        }finally {
+            lock.unlock();
+        }
+        store(temp);
+    }
+}
+class PairManipulator implements Runnable{
+    private PairManager pm;
+    public PairManipulator(PairManager pm){
+        this.pm = pm;
+    }
+    @Override
+    public void run() {
+        while(true){
+            pm.increment();
+        }
+    }
+    public String toString(){
+        return "Pair: "+pm.getPair()+" CheckCounter: "+pm.checkCounter.get();
+    }
+}
+class PairChecker implements Runnable{
+    private PairManager pm;
+    public PairChecker(PairManager pm){
+        this.pm = pm;
+    }
+    @Override
+    public void run() {
+        while (true) {
+            pm.checkCounter.incrementAndGet();
+            pm.getPair().checkState();
+        }
+    }
+}
+public class CriticalSection {
+    static void testApproaches(PairManager pairManager1,PairManager pairManager2){
+        PairManipulator pm1 = new PairManipulator(pairManager1);//同步控制整个方法
+        PairManipulator pm2 = new PairManipulator(pairManager2);//同步代码块
+
+        PairChecker pairChecker1 = new PairChecker(pairManager1);
+        PairChecker pairChecker2 = new PairChecker(pairManager2);
+
+        ExecutorService exec = Executors.newCachedThreadPool();
+        exec.execute(pm1);
+        exec.execute(pm2);
+        exec.execute(pairChecker1);
+        exec.execute(pairChecker2);
+        try {
+            TimeUnit.MILLISECONDS.sleep(500);
+        } catch (InterruptedException e) {
+            System.out.println("sleep interrupted");
+        }
+        System.out.println("pm1: "+pm1+"\npm2: "+pm2);
+        System.exit(0);
+    }
+
+    public static void main(String[] args) {
+        PairManager pairManager1 = new PairManager1();
+        PairManager pairManager2 = new PairManager2();
+        testApproaches(pairManager1,pairManager2);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
